@@ -80,6 +80,10 @@ const login = async (req, res, next) => {
       return errorResponse(res, 403, 'Account is deactivated. Please contact hotel administration.');
     }
 
+    if (!user.password) {
+      return errorResponse(res, 401, 'Invalid email or password credentials.');
+    }
+
     const isMatch = await user.comparePassword(password);
     if (!isMatch) {
       return errorResponse(res, 401, 'Invalid email or password credentials.');

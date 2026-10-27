@@ -18,23 +18,50 @@ app.use(
   })
 );
 
-// CORS configuration
-const allowedOrigins = [
-  env.CLIENT_URL,
-  'http://localhost:5173',
-  'http://localhost:3000',
-  'http://127.0.0.1:5173',
-  'http://127.0.0.1:3000'
-];
+// CORS configuration - Support local dev, configured CLIENT_URL, and production Vercel origins
+const getAllowedOrigins = () => {
+  const origins = [
+    'http://localhost:5173',
+    'http://localhost:3000',
+    'http://127.0.0.1:5173',
+    'http://127.0.0.1:3000',
+    'https://hotel-pro-n4ga.vercel.app'
+  ];
+
+  if (env.CLIENT_URL) {
+    const envOrigins = env.CLIENT_URL.split(',').map((u) => u.trim());
+    origins.push(...envOrigins);
+  }
+
+  // Normalize by removing trailing slashes and duplicates
+  return Array.from(new Set(origins.filter(Boolean).map((u) => u.replace(/\/$/, ''))));
+};
+
+const allowedOrigins = getAllowedOrigins();
 
 app.use(
   cors({
     origin: (origin, callback) => {
       // Allow requests with no origin (like mobile apps, curl, or server-to-server)
-      if (!origin || allowedOrigins.includes(origin) || env.NODE_ENV !== 'production') {
+      if (!origin) {
         return callback(null, true);
       }
-      return callback(new Error('Blocked by CORS policy'));
+
+      const cleanOrigin = origin.replace(/\/$/, '');
+
+      // Allow if origin is in allowedOrigins list, matches any .vercel.app domain, or non-production
+      const isAllowed =
+        allowedOrigins.includes(cleanOrigin) ||
+        /\.vercel\.app$/.test(cleanOrigin) ||
+        env.NODE_ENV !== 'production';
+
+      if (isAllowed) {
+        return callback(null, true);
+      }
+
+      const corsError = new Error(`Blocked by CORS policy: Origin ${origin} is not allowed`);
+      corsError.statusCode = 403;
+      return callback(corsError);
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],

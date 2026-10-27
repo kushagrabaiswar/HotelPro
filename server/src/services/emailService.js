@@ -4,7 +4,7 @@ const logger = require('../utils/logger');
 
 let transporter = null;
 
-if (env.SMTP_HOST && env.SMTP_USER && env.SMTP_PASS) {
+if (process.env.NODE_ENV !== 'test' && env.SMTP_HOST && env.SMTP_USER && env.SMTP_PASS) {
   transporter = nodemailer.createTransport({
     host: env.SMTP_HOST,
     port: env.SMTP_PORT,

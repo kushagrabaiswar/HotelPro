@@ -9,7 +9,7 @@ const env = {
   MONGODB_URI: process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/hotelpro',
   JWT_SECRET: process.env.JWT_SECRET || 'hotelpro_super_secure_jwt_secret_key_2026_xyz',
   JWT_EXPIRES_IN: process.env.JWT_EXPIRES_IN || '7d',
-  CLIENT_URL: process.env.CLIENT_URL || 'http://localhost:5173',
+  CLIENT_URL: process.env.CLIENT_URL || 'https://hotel-pro-n4ga.vercel.app,http://localhost:5173',
   
   // Payment Gateway Config
   PAYMENT_PROVIDER: process.env.PAYMENT_PROVIDER || 'sandbox',

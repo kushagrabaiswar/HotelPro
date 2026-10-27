@@ -20,7 +20,7 @@ services:
       - key: JWT_EXPIRES_IN
         value: 7d
       - key: CLIENT_URL
-        sync: false
+        value: "https://hotel-pro-n4ga.vercel.app"
       - key: PAYMENT_PROVIDER
         value: sandbox
       - key: ADMIN_NAME

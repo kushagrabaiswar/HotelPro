@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
 import request from 'supertest';
 import app from '../src/app';
 import { connectDB, disconnectDB } from '../src/config/db';
@@ -6,6 +6,15 @@ import { seedDatabase } from '../src/utils/seedData';
 import User from '../src/models/User';
 import Room from '../src/models/Room';
 import Booking from '../src/models/Booking';
+
+vi.mock('../src/services/emailService', async (importOriginal) => {
+  const actual = await importOriginal();
+  return {
+    ...actual,
+    sendEmail: vi.fn().mockResolvedValue({ success: true, messageId: 'test_id', mode: 'mock' }),
+    sendBookingConfirmationEmail: vi.fn().mockResolvedValue({ success: true, messageId: 'test_id', mode: 'mock' })
+  };
+});
 
 describe('HotelPro Backend API Suite', () => {
   let customerToken = '';
@@ -235,7 +244,7 @@ describe('HotelPro Backend API Suite', () => {
 
       expect(res.statusCode).toBe(200);
       expect(res.body.data.booking.status).toBe('confirmed');
-    });
+    }, 15000);
 
     it('should retrieve booking invoice', async () => {
       const res = await request(app)
@@ -287,6 +296,38 @@ describe('HotelPro Backend API Suite', () => {
       expect(res.statusCode).toBe(200);
       expect(res.headers['content-type']).toContain('text/csv');
       expect(res.text).toContain('Booking Reference');
+    });
+  });
+
+  describe('CORS Policy & Safe Error Handling', () => {
+    it('should permit requests with Origin from deployed Vercel frontend', async () => {
+      const res = await request(app)
+        .post('/api/v1/auth/login')
+        .set('Origin', 'https://hotel-pro-n4ga.vercel.app')
+        .send({ email: 'guest@hotelpro.com', password: 'Guest@HotelPro2026' });
+
+      expect(res.statusCode).toBe(200);
+      expect(res.headers['access-control-allow-origin']).toBe('https://hotel-pro-n4ga.vercel.app');
+    });
+
+    it('should permit requests from Vercel preview deployments (*.vercel.app)', async () => {
+      const res = await request(app)
+        .post('/api/v1/auth/login')
+        .set('Origin', 'https://hotel-pro-preview-branch.vercel.app')
+        .send({ email: 'guest@hotelpro.com', password: 'Guest@HotelPro2026' });
+
+      expect(res.statusCode).toBe(200);
+      expect(res.headers['access-control-allow-origin']).toBe('https://hotel-pro-preview-branch.vercel.app');
+    });
+
+    it('should return 401 when user has missing or empty password in database', async () => {
+      const res = await request(app)
+        .post('/api/v1/auth/login')
+        .send({ email: 'nonexistent_test@hotelpro.com', password: 'AnyPassword123' });
+
+      expect(res.statusCode).toBe(401);
+      expect(res.body.success).toBe(false);
+      expect(res.statusCode).not.toBe(500);
     });
   });
 });

@@ -34,7 +34,16 @@ const errorHandler = (err, req, res, next) => {
     return errorResponse(res, 401, 'Invalid authentication token');
   }
 
-  const statusCode = error.statusCode || res.statusCode !== 200 ? (res.statusCode >= 400 ? res.statusCode : 500) : 500;
+  // Explicit CORS policy rejection
+  if (err.message && err.message.includes('CORS')) {
+    return errorResponse(res, 403, err.message);
+  }
+
+  const statusCode =
+    error.statusCode ||
+    err.statusCode ||
+    (res.statusCode >= 400 ? res.statusCode : 500);
+
   return errorResponse(
     res,
     statusCode,
